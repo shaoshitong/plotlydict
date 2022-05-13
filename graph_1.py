@@ -27,7 +27,8 @@ C100_LOG = [[92.73, 0.21],
 fig=plt.figure(figsize=(20,10))
 plt.subplots_adjust(wspace=0.0)
 tag=1
-for name,LOG in zip(["CIFAR-100","CIFAR-10"],[C10_LOG,C100_LOG]):
+teacher_acc={'CIFAR-100':76.44,'CIFAR-10':93.56}
+for name,LOG in zip(["CIFAR-10","CIFAR-100"],[C100_LOG,C10_LOG]):
     ax=fig.add_subplot(1,2,tag)
     tag+=1
     xs=[r"2$\times$",r"4$\times$"]
@@ -69,6 +70,7 @@ for name,LOG in zip(["CIFAR-100","CIFAR-10"],[C10_LOG,C100_LOG]):
              'style': 'normal',
              'size': 30,
              }
+    ax.axhline(teacher_acc[name], c="black", ls='--', lw=2, label="Teacher Model")
     plt.tick_params(labelsize=25)
     labels = ax.get_xticklabels() + ax.get_yticklabels()
     [label.set_fontname('Times New Roman') for label in labels]

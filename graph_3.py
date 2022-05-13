@@ -40,6 +40,15 @@ fig = go.Figure(data=[
     go.Bar(name='vanilla KD with data augmentation', x=x, y=CIFAR100_DATA[3,:,0],error_y=dict(type="data",array=CIFAR100_DATA[3,:,1])),
 
 ])
+fig.add_shape(type="line",
+    name='Teacher Model',
+    x0=-0.5, y0=76.44, x1=2.5, y1=76.44,
+    line=dict(
+        color="rgb(0,0,0)",
+        width=4,
+        dash="dot",
+    ),xref="x", yref="y",
+)
 
 # 柱状图模式需要设置：4选1
 
@@ -76,5 +85,6 @@ layout = dict(
         borderwidth=2)
 )
 fig.update_layout(layout)
+
 fig.write_image("./graph3.png")
 

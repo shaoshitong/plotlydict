@@ -73,6 +73,15 @@ layout = dict(
         bordercolor="black",
         borderwidth=2)
 )
+fig.add_shape(type="line",
+    name='Teacher Model',
+    x0=-0.5, y0=93.56, x1=2.5, y1=93.56,
+    line=dict(
+        color="rgb(0,0,0)",
+        width=4,
+        dash="dot",
+    ),xref="x", yref="y",
+)
 fig.update_layout(layout)
 fig.write_image("./graph2.png")
 

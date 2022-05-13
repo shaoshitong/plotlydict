@@ -37,11 +37,15 @@ ax.errorbar([i+0.1 for i in nums_x],CIFAR100[:,0,0],\
             yerr=CIFAR100[:,0,1],\
             fmt="*",color="r",ecolor='r',elinewidth=2,capsize=4)
 for a_x, y in zip(nums_x,CIFAR100[:,1,0].tolist()):
-    plt.text(a_x+0.14, y-0.33, '%.2f' % y, ha='center', va='bottom', fontsize=12)
+    if y==76.66:
+        plt.text(a_x+0.14, y-0.43, '%.2f' % y, ha='center', va='bottom', fontsize=12)
+    else:
+        plt.text(a_x+0.14, y-0.33, '%.2f' % y, ha='center', va='bottom', fontsize=12)
 l2=ax.plot(nums_x, CIFAR100[:,1,0].tolist(),'*--', c='b',markersize=14,label='Rotating')
 ax.errorbar([i for i in nums_x],CIFAR100[:,1,0],\
             yerr=CIFAR100[:,1,1],\
             fmt="*",color="b",ecolor='b',elinewidth=2,capsize=4)
+ax.axhline(76.44,c="black",ls='--',lw=1,label="Teacher Model")
 plt.legend()
 # plt.plot(x_axis_data, mean_average, 'k*--', alpha=0.5, linewidth=1.5)  # 'bo-'表示蓝色实线，数据点实心原点标注
 plt.xlabel(r'$n_{step}$', fontsize=12, fontweight='bold')  # x_label
