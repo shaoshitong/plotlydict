@@ -9,10 +9,8 @@ font1 = {'family':"Times New Roman",
 plt.rc('font',**font1)
 import seaborn as sns
 import numpy as np
-mean_average = [85.12590667,84.74069333,84.29626667,85.12592, 86.01476,84.59256,
- 84.29630667, 84.65185333, 85.83705333, 85.18517333, 85.24441333,84.65181333,
- 84.17778667,84.68146667]
-mean_std = [0.551,1.439,0.761,1.287,1.213,0.956,1.167,0.841,0.77,0.854,0.305,0.862,1.037,0.551]
+mean_average = np.random.randint(84,86,14)
+mean_std =np.random.rand(14)
 
 # colors = ['#8ECFC9', '#FFBE7A', '#FA7F6F', '#82B0D2', '#9394E7', '#D76364', '#54B345', '#05B9E2']
 val_performance_dict = dict()
