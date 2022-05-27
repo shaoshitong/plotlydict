@@ -72,7 +72,6 @@ class Table(object):
     def show(self):
         self.data = []
         iter = 0
-
         for data in self.data_list:
             base_data = go.Table(
                 header=dict(
@@ -89,7 +88,8 @@ class Table(object):
             self.data.append(base_data)
         self.set_layout()
         fig = Figure(data=self.data, layout=self.layout)
-        fig.show()
+        fig.to_image()
+        fig.write_image(file="a.jpg")
 
     def get_fig(self):
         data = self.data_list[0]
@@ -106,7 +106,7 @@ class Table(object):
         )
         return base_data
 #
-# import numpy as np
-# data=[["a","b","c"],[100,100,100]]
-# Table([data]).show()
-#
+import numpy as np
+data=[["a","b","c"],[100,100,100]]
+Table([data]).show()
+
