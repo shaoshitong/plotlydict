@@ -13,15 +13,33 @@ class PltAboutHook(object):
     def __init__(self, model, type='forward', norm='mean', mode='multi', log=False, hook_function=None):
         """
         Args:
-            model: nn.Module(), It can be any model with nn.Module as base class, which will only be registered with hooks in the model's minimal leaf operator
+            model: nn.Module, It can be any model with nn.Module as base class, which will o
+                   nly be registered with hooks in the model's minimal leaf operator
             type: str, one of forward and backward
             norm: str, one of sum and mean
             mode: str, one of multi and one
-            log: bool, since the norm of some parameters may change drastically, the log can be set to True for better observation
+            log: bool, since the norm of some parameters may change drastically, the log can
+                 be set to True for better observation
             hook_function: callable, you can override the hook_function defined in this class
         Override:
-            The only overloaded function you need to care about is hook_function, which needs to be defined as follows
-            ''
+            The only overloaded function you need to care about is hook_function, which needs
+             to be defined as follows:
+            def hook_function(module:nn.Module, inputs, outputs):
+                Args:
+                    module: model
+                    inputs: tuple of inputs
+                    outputs: tuple of outputs
+                References:
+                    What you want to accomplish in that function is to pass the values into s
+                    elf.buffer_dict
+        References:
+            When type is backward, it represents the gradient of viewing the input and output,
+            and when type is forward, it represents the gradient of viewing the input and out
+            put. In addition, to cope with the huge difference between the upper and lower bo
+            unds of the values, the method provides the log option, i.e., log is taken for al
+            l outputs. finally, one represents the output information of the model meta-opera
+            tor of the last batch, while multi represents the output information of the model
+            meta-operator with the change of step.
         """
         super(PltAboutHook, self).__init__()
         self.model = model
