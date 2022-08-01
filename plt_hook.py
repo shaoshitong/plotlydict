@@ -223,6 +223,9 @@ class PltAboutHook(object):
                     scatter_x.append(i)
                     scatter_y.append(outp)
                     trun_name.append(name)
+            scatter_x.reverse()
+            trun_name.reverse()
+            trun_x.reverse()
             sc=plt.scatter(scatter_x,scatter_y,c=scatter_y,marker='*',alpha=0.7,s=8,cmap=plt.cm.get_cmap('RdYlBu'))
             plt.colorbar(sc)
             cnames=[cname[:cname.find('(')] for cname in names]
@@ -244,7 +247,7 @@ class PltAboutHook(object):
             amin,amax=scatter_y_tmp.mean()-scatter_y_tmp.std(),scatter_y_tmp.mean()+scatter_y_tmp.std()
             shown_x=[]
             for x,y in zip(scatter_x,scatter_y):
-                if y>=amax or y<=amin:
+                if y>=amax or y<=amin or math.isinf(y):
                     shown_x.append(x)
             shown_x=set(shown_x)
             plt.xticks(trun_x, [cname if x in shown_x else '' for x,cname in zip(trun_x,cnames)], rotation=20)
