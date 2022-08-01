@@ -77,17 +77,17 @@ class PltAboutHook(object):
             if self.norm == 'mean':
                 for i, input in enumerate(inputs):
                     self.buffer_dict[str(module) + str(id(module))]['inputs'][i].append(
-                        (self.count, (input.norm() / input.numel()).detach().item()))
+                        (self.count, (input.norm() / input.numel()).detach().item() if input is not None else 0))
                 for i, output in enumerate(outputs):
                     self.buffer_dict[str(module) + str(id(module))]['outputs'][i].append(
-                        (self.count, (output.norm() / output.numel()).detach().item()))
+                        (self.count, (output.norm() / output.numel()).detach().item() if output is not None else 0))
             else:
                 for i, input in enumerate(inputs):
                     self.buffer_dict[str(module) + str(id(module))]['inputs'][i].append(
-                        (self.count, input.norm().detach().item()))
+                        (self.count, input.norm().detach().item()  if input is not None else 0))
                 for i, output in enumerate(outputs):
                     self.buffer_dict[str(module) + str(id(module))]['outputs'][i].append(
-                        (self.count, output.norm().detach().item()))
+                        (self.count, output.norm().detach().item() if output is not None else 0))
             self.count += 1
 
     def pop_superfluous_element(self):
