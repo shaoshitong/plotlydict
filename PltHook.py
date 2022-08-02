@@ -7,7 +7,9 @@ import numpy as np
 
 class PltAboutHook(object):
     """
-    The function is easy to use, just initialize it before the model is trained and then call the show() method at the right time.
+    References:
+        The function is easy to use, just initialize it before the model is trained and then
+        call the show() method at the right time.
     """
 
     def __init__(self, model, type='forward', norm='mean', mode='multi', log=False, hook_function=None):
@@ -108,11 +110,15 @@ class PltAboutHook(object):
             self.buffer_dict[name]=value
 
     def all_for_registed_hook(self, modules):
+        if len(list(modules.children())) <= 0:
+            self.registed_hook(modules, hook_function=self.hook_function)
+            return
         for module in modules.children():
             if len(list(module.children())) > 0:
                 self.all_for_registed_hook(module)
             elif len(list(module.children())) <= 0 and len(str(module)) < 100:
                 self.registed_hook(module, hook_function=self.hook_function)
+
 
     def zys(self, n):
         value = []

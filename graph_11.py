@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import MultipleLocator
 
 mm_list=np.load("./mm_list.npy")
+mm_list[:,1]-=1
 ax = plt.gca()
 # x_major_locator = MultipleLocator(1)
 # y_major_locator = MultipleLocator(0.5)
@@ -15,16 +16,19 @@ for i in range(mm_list.shape[0]):
     counter_list[int(a.item())].append(b.item())
 print(counter_list)
 for i in range(len(counter_list)):
-    counter_list[i]=sum(counter_list[i])/(len(counter_list[i])+1)
+    if len(counter_list[i])==0:
+        counter_list[i]=-1
+    else:
+        counter_list[i]=sum(counter_list[i])/(len(counter_list[i])+1)
 rgb=(177/255,212/255,219/255)
 plt.scatter(mm_list[:,0],mm_list[:,1],s=5, alpha=0.3, cmap='viridis',c=rgb)
-plt.plot([i for i in range(14)],counter_list,"*b--",markersize=14,label='Mean Value Change Curve')
+plt.plot([i for i in range(14)],counter_list,"*b--",markersize=14,label='Change Curve of Mean Value')
 
 
 
 plt.legend()
 # plt.plot(x_axis_data, mean_average, 'k*--', alpha=0.5, linewidth=1.5)  # 'bo-'表示蓝色实线，数据点实心原点标注
-plt.xlabel(r'$Strength of Data Augmentation$', fontsize=12, fontweight='bold')  # x_label
+plt.xlabel(r'Strength of Data Augmentation', fontsize=12, fontweight='bold')  # x_label
 plt.ylabel('Cosine Confidence Weight', fontsize=12, fontweight='bold')  # y_label
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)

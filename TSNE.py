@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn import manifold, datasets
 import datetime
 
-colors=['#F9F871','#FFC75F','#FFC75F','#FF6F91','#D65DB1','#845EC2','#008E9B','#2C73D2','#B0A8B9','#4B4453','#4FFBDF','#FFD0FF','#008AC4']
+colors=['#F9F871','#DF235F','#FFC75F','#FF6F91','#D65DB1','#845EC2','#008E9B','#2C73D2','#B0A8B9','#4B4453','#4FFBDF','#FFD0FF','#008AC4']
 
 def get_datetime_str(style='dt'):
     cur_time = datetime.datetime.now()
@@ -24,16 +24,17 @@ def get_datetime_str(style='dt'):
 
 def T_SNE(X, y, if_save_image=False, **kwargs):
     """
-    This function is used to draw T-SNE visualization, supports np.ndarray and torch.Tensor types
-
-    X: shape(number,vector's length), input samples
-    y: shape(number,1) or shape(number,), labels
-    if_save_image: whether to save the picture
-    title: the title of T-SNE picture
-    n_components: 2 or 3, where 2 refers to 2d, 3 refers to 3d, respectively
-    init: pca or random
-    perplexity: consider the number of adjacent points during optimization
-    cmap: True or False
+    References:
+        This function is used to draw T-SNE visualization, supports np.ndarray and torch.Tensor types
+    Args:
+        X: shape(number,vector's length), input samples
+        y: shape(number,1) or shape(number,), labels
+        if_save_image: whether to save the picture
+        title: the title of T-SNE picture
+        n_components: 2 or 3, where 2 refers to 2d, 3 refers to 3d, respectively
+        init: pca or random
+        perplexity: consider the number of adjacent points during optimization
+        cmap: True or False
     """
     if isinstance(X, torch.Tensor):
         X = X.clone().detach().cpu().numpy()
@@ -56,7 +57,7 @@ def T_SNE(X, y, if_save_image=False, **kwargs):
         if kwargs.get("cmap", False):
             ax.scatter(X_norm[:, 0], X_norm[:, 1], cmap='viridis',alpha=0.9)
         else:
-            ax.scatter(X_norm[:, 0], X_norm[:, 1], s=kwargs.get("s", 5), c=[colors[i] for i in y], cmap='viridis',alpha=0.9)
+            ax.scatter(X_norm[:, 0], X_norm[:, 1], s=kwargs.get("s", 5), c=[i for i in y], cmap='viridis',alpha=0.9)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_xlabel("X")
@@ -67,7 +68,7 @@ def T_SNE(X, y, if_save_image=False, **kwargs):
         if kwargs.get("cmap", False):
             ax.scatter(X[:, 0], X[:, 1], X[:, 2],s=kwargs.get("s", 5), cmap='viridis',alpha=0.9)
         else:
-            ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=[colors[i] for i in y], cmap='viridis',alpha=0.9)
+            ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=[i for i in y], cmap='viridis',alpha=0.9)
         if kwargs.get("view_init", None) != None:
             ax.view_init(kwargs["view_init"][0], kwargs["view_init"][1])
         else:
