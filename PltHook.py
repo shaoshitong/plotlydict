@@ -95,7 +95,7 @@ class PltAboutHook(object):
     def pop_superfluous_element(self):
         for name,value in self.buffer_dict.items():
             inputs=value['inputs']
-            outputs=value['inputs']
+            outputs=value['outputs']
             new_inputs=[]
             for input in inputs:
                 if len(input)>self.maximum:
