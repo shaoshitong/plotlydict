@@ -1,15 +1,17 @@
 import copy
 import re
-
 import numpy as np
 import torch
 import torch.nn as nn
 from matplotlib import cm
+from torchvision.datasets import ImageFolder
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from sklearn.model_selection import StratifiedShuffleSplit
-from torch.utils.data import DataLoader, Dataset
-from tqdm import tqdm
+from torch.utils.data import DataLoader
+from scipy.interpolate import (make_interp_spline, interp2d)
+import matplotlib.colors as mcolors
+import matplotlib.patches as patches
+from PIL import (Image, ImageDraw, ImageFilter)
 
 modes = ["3D", "2D"]
 
@@ -21,8 +23,10 @@ class LossLandscape:
         el, where the model ensures that the pth file has been imported at the e
         nd of training. The loss landscape usually demonstrated in papers is a 3
         D model, but in fact the 3D model is more time consuming than the 2D mod
-        el. It is worth noting that we do not provide reliability guarantees for
-        the generation of loss landscapes in 2D mode.
+        el. To enhance the smoothness of the Loss Landscape and to make it perfe
+        ctly presentable, we sampled the output numerical matrix. It is worth no
+        ting that additional tricks were applied to ensure the aesthetics of the
+        2D LossLandscape.
     """
     def __init__(self, model, trainset, criticion, weight_decay, data_decay_rate=0.1, mode="3D"):
         """
@@ -46,12 +50,15 @@ class LossLandscape:
         self.criticion = criticion
         self.weight_decay = weight_decay
         self.data_decay_rate = data_decay_rate
-        # TODO: Only data_decay_rate of the data is used for plotting
-        labels = [self.trainset[i][1] for i in range(len(self.trainset))]
+        # NOTE: Only data_decay_rate of the data is used for plotting
+        if isinstance(self.trainset,ImageFolder):
+            labels = self.trainset.targets
+        else:
+            labels = [self.trainset[i][1] for i in range(len(self.trainset))]
         ss = StratifiedShuffleSplit(n_splits=1, test_size=1 - data_decay_rate, random_state=0)
         train_indices, valid_indices = list(ss.split(np.array(labels)[:, np.newaxis], labels))[0]
         self.trainset = torch.utils.data.Subset(self.trainset, train_indices)
-        self.traindataloader = DataLoader(self.trainset, shuffle=True, num_workers=4, batch_size=48)
+        self.traindataloader = DataLoader(self.trainset, shuffle=False, num_workers=4, batch_size=48)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def normalize_filter(self, bs, ws):
@@ -89,6 +96,65 @@ class LossLandscape:
             else:
                 ignored_ws[k] = ws[k]
         return ignored_ws
+
+    def zfunc(self, x, y, fill_color='k', alpha=1.0):
+        scale = 10
+        x = (x * scale).astype(int)
+        y = (y * scale).astype(int)
+        xmin, xmax, ymin, ymax = x.min(), x.max(), y.min(), y.max()
+
+        w, h = xmax - xmin, ymax - ymin
+        z = np.empty((h, w, 4), dtype=float)
+        rgb = mcolors.colorConverter.to_rgb(fill_color)
+        z[:, :, :3] = rgb
+
+        # Build a z-alpha array which is 1 near the line and 0 at the bottom.
+        img = Image.new('L', (w, h), 0)
+        draw = ImageDraw.Draw(img)
+        xy = (np.column_stack([x, y]))
+        xy -= xmin, ymin
+        # Draw a blurred line using PIL
+        draw.line(map(tuple, xy.tolist()), fill=255, width=15)
+        img = img.filter(ImageFilter.GaussianBlur(radius=100))
+        # Convert the PIL image to an array
+        zalpha = np.asarray(img).astype(float)
+        zalpha *= alpha / zalpha.max()
+        # make the alphas melt to zero at the bottom
+        n = zalpha.shape[0] // 4
+        zalpha[:n] *= np.linspace(0, 1, n)[:, None]
+        z[:, :, -1] = zalpha
+        return z
+
+    def gradient_fill(self, x, y, fill_color=None, ax=None, zfunc=None, **kwargs):
+        if ax is None:
+            ax = plt.gca()
+
+        line, = ax.plot(x, y, **kwargs)
+        if fill_color is None:
+            fill_color = line.get_color()
+
+        zorder = line.get_zorder()
+        alpha = line.get_alpha()
+        alpha = 1.0 if alpha is None else alpha
+
+        if zfunc is None:
+            h, w = 100, 1
+            z = np.empty((h, w, 4), dtype=float)
+            rgb = mcolors.colorConverter.to_rgb(fill_color)
+            z[:, :, :3] = rgb
+            z[:, :, -1] = np.linspace(0, alpha, h)[:, None]
+        else:
+            z = self.zfunc(x, y, fill_color=fill_color, alpha=alpha)
+        xmin, xmax, ymin, ymax = x.min(), x.max(), y.min(), y.max()
+        im = ax.imshow(z, aspect='auto', extent=[xmin, xmax, ymin, ymax],
+                       origin='lower', zorder=zorder)
+        xy = np.column_stack([x, y])
+        xy = np.vstack([[xmin, ymin], xy, [xmax, ymin], [xmin, ymin]])
+        clip_path = patches.Polygon(xy, facecolor='none', edgecolor='none', closed=True)
+        ax.add_patch(clip_path)
+        im.set_clip_path(clip_path)
+        ax.autoscale(True)
+        return line, im
 
     @torch.no_grad()
     def l2(self, model, device):
@@ -155,10 +221,11 @@ class LossLandscape:
         result = []
         if self.mode == "2D":
             self.x = self.x[0]
-            for i in tqdm(range(self.x.shape[0])):
+            for i in range(self.x.shape[0]):
                 now_x = self.x[i]
                 loss = self._compute_loss_for_one_coordinate(now_x, 0)
                 result.append(loss)
+                print(f"--finish coordinates ({i}) loss:{round(loss, 3)}")
         else:
             for i in range(self.x.shape[0]):
                 for j in range(self.x.shape[1]):
@@ -178,11 +245,12 @@ class LossLandscape:
         for name, param in temp_model.named_parameters():
             param.data = param.data + now_x * self.x0[name] + now_y * self.y0[name]
         l2 = self.l2(temp_model, device=self.device) * self.weight_decay
-        total_loss = self.test(temp_model) + l2
+        total_loss = self._test(temp_model) + l2
+        del temp_model
         return total_loss.clone().detach().cpu().item()
 
     @torch.no_grad()
-    def test(self, temp_model: nn.Module):
+    def _test(self, temp_model: nn.Module):
         temp_model.eval()
         result = 0.0
         for step, (x, y) in enumerate(self.traindataloader):
@@ -196,11 +264,6 @@ class LossLandscape:
     def draw_figure(self, mesh_x, mesh_y, mesh_z):
         if self.mode == "3D":
             mesh_z = mesh_z - mesh_z[np.isfinite(mesh_z)].min()
-            norm = plt.Normalize(
-                mesh_z[np.isfinite(mesh_z)].min(), mesh_z[np.isfinite(mesh_z)].max()
-            )  # normalize to [0,1]
-            colors = cm.plasma(norm(mesh_z))
-            rcount, ccount, _ = colors.shape
             fig = plt.figure(figsize=(10, 8), dpi=120)
             ax = fig.gca(projection="3d")
             ax.view_init(elev=15, azim=5)  # angle
@@ -212,16 +275,17 @@ class LossLandscape:
             ax.xaxis._axinfo["grid"]["color"] = (1, 1, 1, 0)
             ax.yaxis._axinfo["grid"]["color"] = (1, 1, 1, 0)
             ax.zaxis._axinfo["grid"]["color"] = (1, 1, 1, 0)
+            model = interp2d(mesh_x,mesh_y,mesh_z)
+            mesh_x2 = np.linspace(mesh_x.min(), mesh_x.max(), 500)
+            mesh_y2 = np.linspace(mesh_y.min(), mesh_y.max(), 500)
+            mesh_z2 = model(mesh_x2,mesh_y2)
+            mesh_x2, mesh_y2 = np.meshgrid(mesh_x2, mesh_y2)
             surf = ax.plot_surface(
-                mesh_x, mesh_y, mesh_z, cmap=plt.get_cmap("rainbow"), shade=False
+                mesh_x2, mesh_y2, mesh_z2, cmap=plt.get_cmap("rainbow"), shade=False
             )
             surf.set_facecolor((0, 0, 0, 0))
-            # adjust_lim = 0.7
-            # ax.set_xlim(-1 * adjust_lim, 1 * adjust_lim)
-            # ax.set_ylim(-1 * adjust_lim, 1 * adjust_lim)
-            ax.set_zlim(0,max(6,mesh_z.max()))
+            ax.set_zlim(0,10)
             fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-            # frame = plt.gca()
             ax.axes.get_yaxis().set_visible(False)
             ax.axes.get_xaxis().set_visible(False)
             ax.axes.get_zaxis().set_visible(False)
@@ -242,7 +306,26 @@ class LossLandscape:
             plt.show()
 
         elif self.mode == "2D":
-            plt.plot(mesh_x, mesh_z)
+            mesh_z = mesh_z - mesh_z[np.isfinite(mesh_z)].min()
+            model = make_interp_spline(mesh_x,mesh_z)
+            x_min,x_max = mesh_x.min(),mesh_x.max()
+            mesh_x = np.linspace(x_min,x_max,1000)
+            mesh_z = model(mesh_x) + 0.1
+            fig = plt.figure(figsize=(8,8), dpi=120)
+            ax = fig.gca()
+            self.gradient_fill(mesh_x,mesh_z,ax=ax)
+            ax.set_ylim(0,10)
+            ax.set_facecolor('white')
+            font1 = {
+                "family": "Times New Roman",
+                "weight": "bold",
+                "style": "normal",
+                "size": 12,
+            }
+            plt.rc("font", **font1)
+            ax.set_xlabel("X", fontdict=font1)
+            ax.set_ylabel("Training Loss", fontdict=font1)
+            ax.set_title("",fontdict=font1)
             plt.savefig(LossLandscape.get_datetime_str() + ".png")
             plt.show()
 

@@ -3,6 +3,19 @@
 
 **这里陈列了我编写的一些关于深度学习的画图工具，如果觉得有帮助可以给个star.**
 
+
+### Update
+
+***08/13/2022***
+
+`News`: 
+1. Add 2D LossLandscape drawing functionality to this library and achieve quite beautiful drawing results, as follows:
+
+ResNet50 (Left):               RegNet_y_32gf(Right):
+
+![jpg](./figures/resnet50.png) | ![jpg](./figures/regnet_y_32gf.png)
+--- | ---
+
 ### plotlydict API
 
 **我在其中加入了2维直方图，雷达图，条形图，柱状图，散点图，流形图，3维图，饼图，表格，热点图.**
